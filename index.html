@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Bhondu Somiti</title>
+<style>
+  :root{ --primary:#2b8a3e; --muted:#f4f6f7; --card:#ffffff; --danger:#e74c3c; font-family:Helvetica, Arial, sans-serif;}
+  body{ margin:0; background:var(--muted); color:#111; }
+  .top{ background:var(--primary); color:white; padding:14px 16px; font-size:20px; display:flex; justify-content:space-between; align-items:center;}
+  .wrap{ padding:16px; max-width:900px; margin:16px auto; }
+  .card{ background:var(--card); border-radius:8px; padding:12px; box-shadow:0 2px 8px rgba(0,0,0,0.05); margin-bottom:12px; }
+  input[type="text"], input[type="password"], input[type="number"], input[type="file"]{ width:100%; padding:10px; margin:8px 0; border:1px solid #ddd; border-radius:6px; box-sizing:border-box; }
+  button{ padding:10px 12px; border-radius:6px; border:none; cursor:pointer; }
+  .btn-primary{ background:var(--primary); color:white; }
+  .btn-danger{ background:var(--danger); color:white; }
+  .row{ display:flex; gap:8px; align-items:center; }
+  .member-row{ display:flex; justify-content:space-between; align-items:center; padding:10px 6px; border-bottom:1px solid #eee; }
+  .muted{ color:#666; font-size:13px; }
+  img{ width:50px; height:50px; border-radius:50%; object-fit:cover; }
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div>Bhondu Somiti</div>
+</div>
+
+<div class="wrap">
+
+  <!-- LOGIN -->
+  <div id="login-card" class="card">
+    <h3>লগইন করুন</h3>
+    <input id="login-username" type="text" placeholder="Username" />
+    <input id="login-password" type="password" placeholder="Password" />
+    <button class="btn-primary" onclick="doLogin()">Login</button>
+  </div>
+
+  <!-- APP -->
+  <div id="app" class="card" style="display:none;">
+    <h3>Member Manager</h3>
+
+    <input id="new-name" type="text" placeholder="মেম্বার নাম" />
+    <input id="new-deposit" type="number" placeholder="শুরুতে জমা" />
+    <input id="new-photo" type="file" accept="image/*" />
+    <button class="btn-primary" onclick="addMember()">Add Member</button>
+
+    <h4 style="margin-top:20px;">All Members</h4>
+    <div id="members-list"></div>
+
+  </div>
+
+</div>
+
+<script>
+const USER = "rnroman";
+const PASS = "123456788";
+const DEPOSIT_PASSWORD = "chasto";
+
+function loadMembers(){ return JSON.parse(localStorage.getItem("bh_members")||"[]"); }
+function saveMembers(d){ localStorage.setItem("bh_members", JSON.stringify(d)); }
+
+function doLogin(){
+  let u=document.getElementById("login-username").value;
+  let p=document.getElementById("login-password").value;
+
+  if(u===USER && p===PASS){
+    document.getElementById("login-card").style.display="none";
+    document.getElementById("app").style.display="block";
+    showMembers();
+  } else alert("Username বা Password ভুল!");
+}
+
+// Add Member with password prompt
+function addMember(){
+  let pass = prompt("Add Member Password দিন");
+  if(pass !== DEPOSIT_PASSWORD){
+    alert("Password ভুল!");
+    return;
+  }
+
+  let name=document.getElementById("new-name").value.trim();
+  let dep=Number(document.getElementById("new-deposit").value.trim()||0);
+  let file=document.getElementById("new-photo").files[0];
+
+  if(!name){ alert("নাম লিখুন"); return; }
+
+  let members=loadMembers();
+
+  if(file){
+    let r=new FileReader();
+    r.onload=e=>{
+      members.push({name, deposit:dep, photo:e.target.result});
+      saveMembers(members); showMembers();
+    }
+    r.readAsDataURL(file);
+  } else {
+    members.push({name, deposit:dep, photo:null});
+    saveMembers(members); showMembers();
+  }
+
+  document.getElementById("new-name").value="";
+  document.getElementById("new-deposit").value="";
+  document.getElementById("new-photo").value="";
+}
+
+function editName(i){
+  let members=loadMembers();
+  let n=prompt("নতুন নাম", members[i].name);
+  if(n){ members[i].name=n; saveMembers(members); showMembers(); }
+}
+
+function editDeposit(i){
+  let pass=prompt("Deposit Password দিন (12345)");
+  if(pass!==DEPOSIT_PASSWORD){ alert("Password ভুল"); return; }
+
+  let members=loadMembers();
+  let nd=prompt("নতুন Deposit", members[i].deposit);
+  if(nd!==null){ members[i].deposit=Number(nd); saveMembers(members); showMembers(); }
+}
+
+function deleteMember(i){
+  let members=loadMembers();
+  if(confirm("ডিলিট করবেন?")){ members.splice(i,1); saveMembers(members); showMembers(); }
+}
+
+function showMembers(){
+  let members=loadMembers();
+  let box=document.getElementById("members-list");
+  box.innerHTML="";
+
+  members.forEach((m,i)=>{
+    box.innerHTML += `
+      <div class='member-row'>
+        <div style='display:flex;gap:10px;align-items:center;'>
+          <img src='${m.photo || "https://i.ibb.co/6tFjK6r/default-avatar.png"}' />
+          <div><b>${m.name}</b><br>৳${m.deposit}</div>
+        </div>
+        <div>
+          <button onclick='editName(${i})'>Name</button>
+          <button onclick='editDeposit(${i})'>Deposit</button>
+          <button class='btn-danger' onclick='deleteMember(${i})'>X</button>
+        </div>
+      </div>`;
+  })
+}
+</script>
+
+</body>
+</html>
